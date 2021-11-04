@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-depl
-  namespace: service-system
+  name: sales-depl
+  namespace: sales-system
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: service
+      app: sales
   template:
     metadata:
       labels:
-        app: service
+        app: sales
     spec:
       containers:
-      - name: service-api
+      - name: sales-api
         resources:
           limits:
             cpu: "2000m" # Up to 2 full cores
