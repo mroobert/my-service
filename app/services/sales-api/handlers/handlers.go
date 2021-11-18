@@ -10,6 +10,7 @@ import (
 
 	"github.com/mroobert/my-service/app/services/sales-api/handlers/debug/checkgrp"
 	"github.com/mroobert/my-service/app/services/sales-api/handlers/v1/testgrp"
+	"github.com/mroobert/my-service/business/web/mid"
 	"github.com/mroobert/my-service/foundation/web"
 	"go.uber.org/zap"
 )
@@ -60,7 +61,10 @@ type APIMuxConfig struct {
 func APIMux(cfg APIMuxConfig) *web.App {
 
 	// Construct the web.App which holds all routes.
-	app := web.NewApp(cfg.Shutdown)
+	app := web.NewApp(
+		cfg.Shutdown,
+		mid.Logger(cfg.Log),
+	)
 
 	// Load the routes for the different versions of the API
 	v1(app, cfg)
@@ -71,8 +75,5 @@ func APIMux(cfg APIMuxConfig) *web.App {
 func v1(app *web.App, cfg APIMuxConfig) {
 	const version = "v1"
 
-	tgh := testgrp.Handlers{
-		Log: cfg.Log,
-	}
-	app.Handle(http.MethodGet, version, "/test", tgh.Test)
+	app.Handle(http.MethodGet, version, "/test", testgrp.Test)
 }
