@@ -11,6 +11,7 @@ import (
 
 // Logger ...
 func Logger(log *zap.SugaredLogger) web.Middleware {
+
 	// This is the actual middleware function to be executed.
 	m := func(handler web.Handler) web.Handler {
 
@@ -21,7 +22,7 @@ func Logger(log *zap.SugaredLogger) web.Middleware {
 			// to be shutdown gracefully.
 			v, err := web.GetValues(ctx)
 			if err != nil {
-				return err // web.NewShutdownError("web value missing from context")
+				return web.NewShutdownError("web value missing from context")
 			}
 
 			log.Infow("request started", "traceid", v.TraceID, "method", r.Method, "path", r.URL.Path,
