@@ -1,5 +1,10 @@
 SHELL := /bin/bash
 
+# ==============================================================================
+# Testing running system
+
+# For testing load on the service.
+# hey -m GET -c 100 -n 10000 http://localhost:3000/v1/test
 
 run: 
 	go run app/services/sales-api/main.go | go run app/tools/logfmt/main.go
