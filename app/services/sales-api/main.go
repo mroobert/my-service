@@ -12,11 +12,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ardanlabs/conf"
+	"github.com/ardanlabs/conf/v2"
 	"github.com/mroobert/my-service/app/services/sales-api/handlers"
+	"github.com/mroobert/my-service/foundation/logger"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 var build = "develop"
@@ -25,27 +25,10 @@ var build = "develop"
 Need to figure out timeouts for http service.
 */
 
-func initLogger(service string) (*zap.SugaredLogger, error) {
-	config := zap.NewProductionConfig()
-	config.OutputPaths = []string{"stdout"}
-	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	config.DisableStacktrace = true
-	config.InitialFields = map[string]interface{}{
-		"service": service,
-	}
-
-	log, err := config.Build()
-	if err != nil {
-		return nil, err
-	}
-
-	return log.Sugar(), nil
-}
-
 func main() {
 
 	// Construct the application logger.
-	log, err := initLogger("SALES-API")
+	log, err := logger.New("SALES-API")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -85,13 +68,13 @@ func run(log *zap.SugaredLogger) error {
 		}
 	}{
 		Version: conf.Version{
-			SVN:  build,
-			Desc: "copyright information here",
+			Build: build,
+			Desc:  "copyright information here",
 		},
 	}
 
 	const prefix = "SALES"
-	help, err := conf.ParseOSArgs(prefix, &cfg)
+	help, err := conf.Parse(prefix, &cfg)
 	if err != nil {
 		if errors.Is(err, conf.ErrHelpWanted) {
 			fmt.Println(help)
