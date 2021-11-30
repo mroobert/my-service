@@ -3,6 +3,7 @@
 
 # Binaries
 app/services/sales-api/sales-api
+app/tools/sales-admin/sales-admin
 
 # Mac
 .DS_Store
