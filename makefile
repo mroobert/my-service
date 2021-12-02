@@ -9,13 +9,19 @@ SHELL := /bin/bash
 # To generate a private/public key PEM file.
 # openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
 # openssl rsa -pubout -in private.pem -out public.pem
-# ./sales-admin genkey
+
+# Testing Auth
+# curl -il http://localhost:3000/v1/testauth
+# curl -il -H "Authorization: Bearer ${TOKEN}" http://localhost:3000/v1/testauth
 
 run: 
 	go run app/services/sales-api/main.go | go run app/tools/logfmt/main.go
 
 admin-genkey: 
 	go run app/tools/sales-admin/main.go genkey
+
+admin-gentoken: 
+	go run app/tools/sales-admin/main.go gentoken 54bb2165-71e1-41a6-af3e-7da4a0e1e2c1
 
 # ==============================================================================
 # Modules support

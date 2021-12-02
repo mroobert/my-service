@@ -80,6 +80,11 @@ func processCommands(args conf.Args, log *zap.SugaredLogger) error {
 		if err := commands.GenKey(); err != nil {
 			return fmt.Errorf("key generation: %w", err)
 		}
+	case "gentoken":
+		kid := args.Num(1)
+		if err := commands.GenToken(kid); err != nil {
+			return fmt.Errorf("generating token: %w", err)
+		}
 	default:
 		fmt.Println("genkey: generate a set of private/public key files")
 		return commands.ErrHelp

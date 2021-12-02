@@ -10,6 +10,7 @@ import (
 
 	"github.com/mroobert/my-service/app/services/sales-api/handlers/debug/checkgrp"
 	"github.com/mroobert/my-service/app/services/sales-api/handlers/v1/testgrp"
+	"github.com/mroobert/my-service/business/sys/auth"
 	"github.com/mroobert/my-service/business/web/mid"
 	"github.com/mroobert/my-service/foundation/web"
 	"go.uber.org/zap"
@@ -55,6 +56,7 @@ func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
 type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
+	Auth     *auth.Auth
 }
 
 // APIMux constructs an http.Handler with all application routes defined.
@@ -79,4 +81,5 @@ func v1(app *web.App, cfg APIMuxConfig) {
 	const version = "v1"
 
 	app.Handle(http.MethodGet, version, "/test", testgrp.Test)
+	app.Handle(http.MethodGet, version, "/testauth", testgrp.Test, mid.Authenticate(cfg.Auth), mid.Authorize("ADMIN"))
 }
