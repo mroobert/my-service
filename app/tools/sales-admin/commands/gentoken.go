@@ -50,7 +50,7 @@ func GenToken(kid string) error {
 			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(8760 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
 		},
-		Roles: []string{"ADMIN"},
+		Roles: []string{auth.RoleAdmin},
 	}
 
 	// This will generate a JWT with the claims embedded in them. The database

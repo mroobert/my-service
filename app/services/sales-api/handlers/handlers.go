@@ -81,5 +81,5 @@ func v1(app *web.App, cfg APIMuxConfig) {
 	const version = "v1"
 
 	app.Handle(http.MethodGet, version, "/test", testgrp.Test)
-	app.Handle(http.MethodGet, version, "/testauth", testgrp.Test, mid.Authenticate(cfg.Auth), mid.Authorize("ADMIN"))
+	app.Handle(http.MethodGet, version, "/testauth", testgrp.Test, mid.Authenticate(cfg.Auth), mid.Authorize(auth.RoleAdmin))
 }
