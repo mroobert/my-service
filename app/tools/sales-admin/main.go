@@ -8,6 +8,7 @@ import (
 
 	"github.com/ardanlabs/conf/v2"
 	"github.com/mroobert/my-service/app/tools/sales-admin/commands"
+	"github.com/mroobert/my-service/business/sys/database"
 	"github.com/mroobert/my-service/foundation/logger"
 	"go.uber.org/zap"
 )
@@ -43,6 +44,13 @@ func run(log *zap.SugaredLogger) error {
 	cfg := struct {
 		conf.Version
 		Args conf.Args
+		DB   struct {
+			User       string `conf:"default:postgres"`
+			Password   string `conf:"default:postgres,mask"`
+			Host       string `conf:"default:localhost"`
+			Name       string `conf:"default:postgres"`
+			DisableTLS bool   `conf:"default:true"`
+		}
 	}{
 		Version: conf.Version{
 			Build: build,
@@ -69,12 +77,20 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Commands
 
-	return processCommands(cfg.Args, log)
+	dbConfig := database.Config{
+		User:       cfg.DB.User,
+		Password:   cfg.DB.Password,
+		Host:       cfg.DB.Host,
+		Name:       cfg.DB.Name,
+		DisableTLS: cfg.DB.DisableTLS,
+	}
+
+	return processCommands(cfg.Args, log, dbConfig)
 }
 
 // processCommands handles the execution of the commands specified on
 // the command line.
-func processCommands(args conf.Args, log *zap.SugaredLogger) error {
+func processCommands(args conf.Args, log *zap.SugaredLogger, dbConfig database.Config) error {
 	switch args.Num(0) {
 	case "genkey":
 		if err := commands.GenKey(); err != nil {
@@ -84,6 +100,14 @@ func processCommands(args conf.Args, log *zap.SugaredLogger) error {
 		kid := args.Num(1)
 		if err := commands.GenToken(kid); err != nil {
 			return fmt.Errorf("generating token: %w", err)
+		}
+	case "migrate":
+		if err := commands.Migrate(dbConfig); err != nil {
+			return fmt.Errorf("db migration: %w", err)
+		}
+	case "seed":
+		if err := commands.Seed(dbConfig); err != nil {
+			return fmt.Errorf("db seed: %w", err)
 		}
 	default:
 		fmt.Println("genkey: generate a set of private/public key files")

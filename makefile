@@ -26,6 +26,12 @@ admin-genkey:
 admin-gentoken: 
 	go run app/tools/sales-admin/main.go gentoken 54bb2165-71e1-41a6-af3e-7da4a0e1e2c1
 
+admin-migrate: 
+	go run app/tools/sales-admin/main.go migrate
+
+admin-seed:
+	go run app/tools/sales-admin/main.go seed
+
 # ==============================================================================
 # Running tests within the local computer
 
