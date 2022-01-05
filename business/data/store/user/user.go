@@ -1,25 +1,22 @@
-// Package user contains user related CRUD functionality.
+// Package db contains user related CRUD functionality.
 package user
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/mroobert/my-service/business/sys/database"
-	"github.com/mroobert/my-service/business/sys/validate"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // Store manages the set of API's for user access.
 type Store struct {
 	log *zap.SugaredLogger
-	db  *sqlx.DB
+	db  sqlx.ExtContext
 }
 
-// NewStore constructs a user store for api access.
+// NewStore constructs a data for api access.
 func NewStore(log *zap.SugaredLogger, db *sqlx.DB) Store {
 	return Store{
 		log: log,
@@ -28,26 +25,7 @@ func NewStore(log *zap.SugaredLogger, db *sqlx.DB) Store {
 }
 
 // Create inserts a new user into the database.
-func (s Store) Create(ctx context.Context, nu NewUser, now time.Time) (User, error) {
-	if err := validate.Check(nu); err != nil {
-		return User{}, fmt.Errorf("validating data: %w", err)
-	}
-
-	hash, err := bcrypt.GenerateFromPassword([]byte(nu.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return User{}, fmt.Errorf("generating password hash: %w", err)
-	}
-
-	usr := User{
-		ID:           validate.GenerateID(),
-		Name:         nu.Name,
-		Email:        nu.Email,
-		PasswordHash: hash,
-		Roles:        nu.Roles,
-		DateCreated:  now,
-		DateUpdated:  now,
-	}
-
+func (s Store) Create(ctx context.Context, usr User) error {
 	const q = `
 	INSERT INTO users
 		(user_id, name, email, password_hash, roles, date_created, date_updated)
@@ -55,7 +33,124 @@ func (s Store) Create(ctx context.Context, nu NewUser, now time.Time) (User, err
 		(:user_id, :name, :email, :password_hash, :roles, :date_created, :date_updated)`
 
 	if err := database.NamedExecContext(ctx, s.log, s.db, q, usr); err != nil {
-		return User{}, fmt.Errorf("inserting user: %w", err)
+		return fmt.Errorf("inserting user: %w", err)
+	}
+
+	return nil
+}
+
+// Update replaces a user document in the database.
+func (s Store) Update(ctx context.Context, usr User) error {
+	const q = `
+	UPDATE
+		users
+	SET 
+		"name" = :name,
+		"email" = :email,
+		"roles" = :roles,
+		"password_hash" = :password_hash,
+		"date_updated" = :date_updated
+	WHERE
+		user_id = :user_id`
+
+	if err := database.NamedExecContext(ctx, s.log, s.db, q, usr); err != nil {
+		return fmt.Errorf("updating userID[%s]: %w", usr.ID, err)
+	}
+
+	return nil
+}
+
+// Delete removes a user from the database.
+func (s Store) Delete(ctx context.Context, userID string) error {
+	data := struct {
+		UserID string `db:"user_id"`
+	}{
+		UserID: userID,
+	}
+
+	const q = `
+	DELETE FROM
+		users
+	WHERE
+		user_id = :user_id`
+
+	if err := database.NamedExecContext(ctx, s.log, s.db, q, data); err != nil {
+		return fmt.Errorf("deleting userID[%s]: %w", userID, err)
+	}
+
+	return nil
+}
+
+// Query retrieves a list of existing users from the database.
+func (s Store) Query(ctx context.Context, pageNumber int, rowsPerPage int) ([]User, error) {
+	data := struct {
+		Offset      int `db:"offset"`
+		RowsPerPage int `db:"rows_per_page"`
+	}{
+		Offset:      (pageNumber - 1) * rowsPerPage,
+		RowsPerPage: rowsPerPage,
+	}
+
+	const q = `
+	SELECT
+		*
+	FROM
+		users
+	ORDER BY
+		user_id
+	OFFSET :offset ROWS FETCH NEXT :rows_per_page ROWS ONLY`
+
+	var usrs []User
+	if err := database.NamedQuerySlice(ctx, s.log, s.db, q, data, &usrs); err != nil {
+		return nil, fmt.Errorf("selecting users: %w", err)
+	}
+
+	return usrs, nil
+}
+
+// QueryByID gets the specified user from the database.
+func (s Store) QueryByID(ctx context.Context, userID string) (User, error) {
+	data := struct {
+		UserID string `db:"user_id"`
+	}{
+		UserID: userID,
+	}
+
+	const q = `
+	SELECT
+		*
+	FROM
+		users
+	WHERE 
+		user_id = :user_id`
+
+	var usr User
+	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &usr); err != nil {
+		return User{}, fmt.Errorf("selecting userID[%q]: %w", userID, err)
+	}
+
+	return usr, nil
+}
+
+// QueryByEmail gets the specified user from the database by email.
+func (s Store) QueryByEmail(ctx context.Context, email string) (User, error) {
+	data := struct {
+		Email string `db:"email"`
+	}{
+		Email: email,
+	}
+
+	const q = `
+	SELECT
+		*
+	FROM
+		users
+	WHERE
+		email = :email`
+
+	var usr User
+	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &usr); err != nil {
+		return User{}, fmt.Errorf("selecting email[%q]: %w", email, err)
 	}
 
 	return usr, nil
