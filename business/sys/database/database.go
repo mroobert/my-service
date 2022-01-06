@@ -144,7 +144,7 @@ func NamedQueryStruct(ctx context.Context, log *zap.SugaredLogger, db sqlx.ExtCo
 	defer rows.Close()
 
 	if !rows.Next() {
-		return ErrNotFound
+		return ErrDBNotFound
 	}
 
 	if err := rows.StructScan(dest); err != nil {
